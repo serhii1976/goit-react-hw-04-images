@@ -30,7 +30,11 @@ export class Modal extends Component {
     return (
       <div className={css.overlay} onClick={this.handleBackdropClick}>
         <div className={css.modal}>
-          <img src={activeImg.largeImageURL} alt={activeImg.tags} />
+          <img
+            className={css.modalImg}
+            src={activeImg.largeImageURL}
+            alt={activeImg.tags}
+          />
         </div>
       </div>
     );
