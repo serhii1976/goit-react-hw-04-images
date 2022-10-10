@@ -10,7 +10,7 @@ import css from './App.module.css';
 export class App extends Component {
   state = {
     searchValue: '',
-    page: 0,
+    page: 1,
     galleryList: [],
     isLoading: false,
     error: null,
