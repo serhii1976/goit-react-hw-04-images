@@ -13,10 +13,52 @@ export class App extends Component {
     page: 1,
     galleryList: [],
     isLoading: false,
+    isVisibleButton: false,
     error: null,
     showModal: false,
     activeImgId: 0,
+    per_page: 12,
   };
+
+  async componentDidUpdate(prevProps, prevState) {
+    const BASE_URL = 'https://pixabay.com/api/';
+    const API_KEY = 'key=29473371-b315f9acd1ced765f914602d8';
+    const queryValue = this.state.searchValue;
+    const per_page = this.state.per_page;
+    const searchSettings = 'image_type=photo&orientation=horizontal';
+
+    if (
+      prevState.searchValue !== queryValue ||
+      prevState.page !== this.state.page
+    ) {
+      this.setState({ isLoading: true });
+
+      try {
+        const response = await axios.get(
+          `${BASE_URL}?q=${queryValue}&page=${this.state.page}&${API_KEY}&${searchSettings}&per_page=${per_page}`
+        );
+
+        this.setState({ error: null });
+        this.setState({
+          galleryList: [...this.state.galleryList, ...response.data.hits],
+        });
+        console.log(response);
+        if (response.data.hits.length === 0) {
+          this.setState({ error: 'Nothing was found for your request' });
+        }
+
+        if (response.data.totalHits / per_page > this.state.page) {
+          this.setState({ isVisibleButton: true });
+        } else {
+          this.setState({ isVisibleButton: false });
+        }
+      } catch {
+        this.setState({ error: 'Failed to load images' });
+      } finally {
+        this.setState({ isLoading: false });
+      }
+    }
+  }
 
   handleSubmit = event => {
     event.preventDefault();
@@ -26,7 +68,12 @@ export class App extends Component {
       alert('please enter a search value');
       return;
     }
-    this.setState({ searchValue: input, page: 1, galleryList: [] });
+    this.setState({
+      searchValue: input,
+      page: 1,
+      galleryList: [],
+      isVisibleButton: false,
+    });
     form.reset();
   };
 
@@ -43,39 +90,15 @@ export class App extends Component {
     }));
   };
 
-  async componentDidUpdate(prevProps, prevState) {
-    const BASE_URL = 'https://pixabay.com/api/';
-    const API_KEY = 'key=29473371-b315f9acd1ced765f914602d8';
-    const queryValue = this.state.searchValue;
-    const searchSettings =
-      'image_type=photo&orientation=horizontal&per_page=12';
-
-    if (
-      prevState.searchValue !== queryValue ||
-      prevState.page !== this.state.page
-    ) {
-      this.setState({ isLoading: true });
-      try {
-        const response = await axios.get(
-          `${BASE_URL}?q=${queryValue}&page=${this.state.page}&${API_KEY}&${searchSettings}`
-        );
-        this.setState({ error: null });
-        this.setState({
-          galleryList: [...this.state.galleryList, ...response.data.hits],
-        });
-        if (response.data.hits.length === 0) {
-          this.setState({ error: 'Nothing was found for your request' });
-        }
-      } catch {
-        this.setState({ error: 'Failed to load images' });
-      } finally {
-        this.setState({ isLoading: false });
-      }
-    }
-  }
   render() {
-    const { galleryList, isLoading, error, showModal, activeImgId } =
-      this.state;
+    const {
+      galleryList,
+      isLoading,
+      isVisibleButton,
+      error,
+      showModal,
+      activeImgId,
+    } = this.state;
 
     return (
       <div className={css.app}>
@@ -85,7 +108,8 @@ export class App extends Component {
         )}
         <Loader isLoading={isLoading} />
         <ImageGallery galleryList={galleryList} onClick={this.toggleModal} />
-        {galleryList.length > 0 && <Button onClick={this.loadMore} />}
+        {isVisibleButton && <Button onClick={this.loadMore} />}
+
         {showModal && (
           <Modal
             galleryList={galleryList}
