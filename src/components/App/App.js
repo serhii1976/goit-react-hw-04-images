@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Searchbar } from 'components/Searchbar/Searchbar';
 import { Loader } from 'components/Loader/Loader';
@@ -7,60 +7,53 @@ import { Modal } from 'components/Modal/Modal';
 import { Button } from 'components/Button/Button';
 import css from './App.module.css';
 
-export class App extends Component {
-  state = {
-    searchValue: '',
-    page: 1,
-    galleryList: [],
-    isLoading: false,
-    isVisibleButton: false,
-    error: null,
-    showModal: false,
-    activeImgId: 0,
-    per_page: 12,
-  };
+export const App = () => {
+  const [searchValue, setSearchValue] = useState('');
+  const [page, setPage] = useState(1);
+  const [galleryList, setGalleryList] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isVisibleButton, setIsVisibleButton] = useState(false);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [activeImgId, setActiveImgId] = useState(0);
 
-  async componentDidUpdate(prevProps, prevState) {
-    const BASE_URL = 'https://pixabay.com/api/';
-    const API_KEY = 'key=29473371-b315f9acd1ced765f914602d8';
-    const queryValue = this.state.searchValue;
-    const per_page = this.state.per_page;
-    const searchSettings = 'image_type=photo&orientation=horizontal';
-
-    if (
-      prevState.searchValue !== queryValue ||
-      prevState.page !== this.state.page
-    ) {
-      this.setState({ isLoading: true });
+  useEffect(() => {
+    async function fetchImages() {
+      const BASE_URL = 'https://pixabay.com/api/';
+      const API_KEY = 'key=29473371-b315f9acd1ced765f914602d8';
+      const per_page = 12;
+      const searchSettings = 'image_type=photo&orientation=horizontal';
 
       try {
+        setIsLoading(true);
+        if (searchValue === '') {
+          return;
+        }
         const response = await axios.get(
-          `${BASE_URL}?q=${queryValue}&page=${this.state.page}&${API_KEY}&${searchSettings}&per_page=${per_page}`
+          `${BASE_URL}?q=${searchValue}&page=${page}&${API_KEY}&${searchSettings}&per_page=${per_page}`
         );
-
-        this.setState({ error: null });
-        this.setState({
-          galleryList: [...this.state.galleryList, ...response.data.hits],
-        });
         console.log(response);
+        setError(null);
+        setGalleryList(prevGallery => [...prevGallery, ...response.data.hits]);
         if (response.data.hits.length === 0) {
-          this.setState({ error: 'Nothing was found for your request' });
+          setError('Nothing was found for your request');
         }
 
-        if (response.data.totalHits / per_page > this.state.page) {
-          this.setState({ isVisibleButton: true });
+        if (response.data.totalHits / per_page > page) {
+          setIsVisibleButton(true);
         } else {
-          this.setState({ isVisibleButton: false });
+          setIsVisibleButton(false);
         }
       } catch {
-        this.setState({ error: 'Failed to load images' });
+        setError('Failed to load images');
       } finally {
-        this.setState({ isLoading: false });
+        setIsLoading(false);
       }
     }
-  }
+    fetchImages();
+  }, [page, searchValue]);
 
-  handleSubmit = event => {
+  const handleSubmit = event => {
     event.preventDefault();
     const form = event.target;
     const input = form.elements.input.value;
@@ -68,56 +61,39 @@ export class App extends Component {
       alert('please enter a search value');
       return;
     }
-    this.setState({
-      searchValue: input,
-      page: 1,
-      galleryList: [],
-      isVisibleButton: false,
-    });
+    setSearchValue(input);
+    setPage(1);
+    setGalleryList([]);
+    setIsVisibleButton(false);
+
     form.reset();
   };
 
-  loadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
+  const loadMore = () => {
+    setPage(prevPage => prevPage + 1);
   };
 
-  toggleModal = e => {
-    this.setState({ activeImgId: e.target.id });
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-    }));
+  const toggleModal = e => {
+    setActiveImgId(e.target.id);
+    setShowModal(showModal => !showModal);
   };
 
-  render() {
-    const {
-      galleryList,
-      isLoading,
-      isVisibleButton,
-      error,
-      showModal,
-      activeImgId,
-    } = this.state;
-
-    return (
-      <div className={css.app}>
-        <Searchbar onSubmit={this.handleSubmit} />
-        {error && (
-          <div style={{ color: 'red', textAlign: 'center' }}>{error};</div>
-        )}
-        <Loader isLoading={isLoading} />
-        <ImageGallery galleryList={galleryList} onClick={this.toggleModal} />
-        {isVisibleButton && <Button onClick={this.loadMore} />}
-
-        {showModal && (
-          <Modal
-            galleryList={galleryList}
-            activeImgId={activeImgId}
-            onClose={this.toggleModal}
-          />
-        )}
-      </div>
-    );
-  }
-}
+  return (
+    <div className={css.app}>
+      <Searchbar onSubmit={handleSubmit} />
+      {error && (
+        <div style={{ color: 'red', textAlign: 'center' }}>{error};</div>
+      )}
+      <Loader isLoading={isLoading} />
+      <ImageGallery galleryList={galleryList} onClick={toggleModal} />
+      {isVisibleButton && <Button onClick={loadMore} />}
+      {showModal && (
+        <Modal
+          galleryList={galleryList}
+          activeImgId={activeImgId}
+          onClose={toggleModal}
+        />
+      )}
+    </div>
+  );
+};

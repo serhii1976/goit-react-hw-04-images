@@ -1,26 +1,24 @@
-import React, { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import css from './ImageGalleryItem.module.css';
 
-export class ImageGalleryItem extends Component {
-  render() {
-    return (
-      <>
-        {this.props.galleryList.map(item => (
-          <li className={css.imageGalleryItem} key={item.id}>
-            <img
-              className={css.imageGalleryItemImage}
-              id={item.id}
-              src={item.webformatURL}
-              alt={item.tags}
-              onClick={this.props.onClick}
-            />
-          </li>
-        ))}
-      </>
-    );
-  }
-}
+export const ImageGalleryItem = ({ galleryList, onClick }) => {
+  return (
+    <>
+      {galleryList.map(item => (
+        <li className={css.imageGalleryItem} key={item.id}>
+          <img
+            className={css.imageGalleryItemImage}
+            id={item.id}
+            src={item.webformatURL}
+            alt={item.tags}
+            onClick={onClick}
+          />
+        </li>
+      ))}
+    </>
+  );
+};
 
 ImageGalleryItem.propTypes = {
   galleryList: PropTypes.arrayOf(
