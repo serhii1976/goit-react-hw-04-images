@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { getImages } from 'components/FetchAPI';
 import { Searchbar } from 'components/Searchbar/Searchbar';
 import { Loader } from 'components/Loader/Loader';
 import { ImageGallery } from 'components/ImageGallery/ImageGallery';
 import { Modal } from 'components/Modal/Modal';
 import { Button } from 'components/Button/Button';
 import css from './App.module.css';
+import { per_page } from 'components/FetchAPI';
 
 export const App = () => {
   const [searchValue, setSearchValue] = useState('');
@@ -19,27 +20,19 @@ export const App = () => {
 
   useEffect(() => {
     async function fetchImages() {
-      const BASE_URL = 'https://pixabay.com/api/';
-      const API_KEY = 'key=29473371-b315f9acd1ced765f914602d8';
-      const per_page = 12;
-      const searchSettings = 'image_type=photo&orientation=horizontal';
-
       try {
         setIsLoading(true);
         if (searchValue === '') {
           return;
         }
-        const response = await axios.get(
-          `${BASE_URL}?q=${searchValue}&page=${page}&${API_KEY}&${searchSettings}&per_page=${per_page}`
-        );
-        console.log(response);
+        const imagesGallery = await getImages(searchValue, page);
+        console.log(imagesGallery);
         setError(null);
-        setGalleryList(prevGallery => [...prevGallery, ...response.data.hits]);
-        if (response.data.hits.length === 0) {
+        setGalleryList(prevGallery => [...prevGallery, ...imagesGallery.hits]);
+        if (imagesGallery.hits.length === 0) {
           setError('Nothing was found for your request');
         }
-
-        if (response.data.totalHits / per_page > page) {
+        if (imagesGallery.totalHits / per_page > page) {
           setIsVisibleButton(true);
         } else {
           setIsVisibleButton(false);
